@@ -3,6 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Calendar</title>
+    <style>
+        .month_calendar {
+            width: 90%;
+            border-collapse: collapse;
+        }
+        .month_calendar th, .month_calendar td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+            width: 14%; /* Roughly 1/7th of the width */
+        }
+        /* Set a height for the day cells only, not the whole table */
+        .month_calendar td {
+            height: 12vh; /* 12% of the viewport height */
+        }
+        .month_calendar th {
+            background-color: #f2f2f2;
+            text-align: center;
+            height: auto; /* Ensure header height is normal */
+        }
+        .noday {
+            background-color: #f9f9f9;
+        }
+        .day-events {
+            font-size: 0.8em;
+            color: #333;
+        }
+        .day-events div {
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -32,5 +67,6 @@
     </div>
 
     {{ calendar|safe }}
+
 </body>
 </html>

@@ -38,8 +38,10 @@
             <strong>{{ hour.time }}:00</strong>
             {% for event in hour.events %}
                 <div>
-                    <p>{{ event.title }} ({{ event.start_time|time:"H:i" }} - {{ event.end_time|time:"H:i" }})</p>
-                    <p>{{ event.description }}</p>
+                    <p><strong>{{ event.get_event_type_display }}</strong></p>
+                    {% if event.title %}<p>{{ event.title }}</p>{% endif %}
+                    <p>({{ event.start_time|time:"H:i" }} - {{ event.end_time|time:"H:i" }})</p>
+                    {% if event.description %}<p>{{ event.description }}</p>{% endif %}
                 </div>
             {% empty %}
                 <p>No events scheduled.</p>

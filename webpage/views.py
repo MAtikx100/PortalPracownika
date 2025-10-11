@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from calendar import HTMLCalendar
-from datetime import date
+from datetime import date, time
 from .models import Day, Event
 from .forms import EventForm
 from django.urls import reverse
@@ -39,11 +39,27 @@ def logout_view(request):
     return redirect('index')
 
 class DayClickableHTMLCalendar(HTMLCalendar):
-    def __init__(self, year=None, month=None, user_username=None):
+    def __init__(self, year=None, month=None, user_username=None, target_user=None):
         super().__init__()
         self.year = year
         self.month = month
         self.user_username = user_username
+        self.target_user = target_user
+        self.events_by_day = {}
+        if self.year and self.month and self.target_user:
+            events = Event.objects.filter(
+                user=self.target_user,
+                day__date__year=self.year,
+                day__date__month=self.month
+            ).order_by('start_time').values_list('day__date__day', 'event_type', 'start_time', 'end_time')
+            for day_num, event_type, start_time, end_time in events:
+                if day_num not in self.events_by_day:
+                    self.events_by_day[day_num] = []
+                self.events_by_day[day_num].append({
+                    'type': event_type,
+                    'start': start_time,
+                    'end': end_time
+                })
 
     def formatday(self, day, weekday):
         if day == 0:
@@ -53,11 +69,24 @@ class DayClickableHTMLCalendar(HTMLCalendar):
                 url = reverse('day_view_user', args=(self.user_username, self.year, self.month, day))
             else:
                 url = reverse('day_view', args=(self.year, self.month, day))
-            return f'<td><a href="{url}">{day}</a></td>'
+
+            day_events = self.events_by_day.get(day, [])
+            events_html = f'<a href="{url}">{day}</a>'
+            events_html += '<div class="day-events">'
+            for event in day_events:
+                event_type_display = event['type'].capitalize()
+                start_str = event['start'].strftime('%H:%M')
+                end_str = event['end'].strftime('%H:%M')
+                events_html += f'<div>{event_type_display}: {start_str} - {end_str}</div>'
+            events_html += '</div>'
+
+            return f'<td>{events_html}</td>'
 
     def formatmonth(self, theyear, themonth, withyear=True):
         self.year, self.month = theyear, themonth
-        return super().formatmonth(theyear, themonth, withyear)
+        html_cal = super().formatmonth(theyear, themonth, withyear)
+        html_cal = html_cal.replace('class="month"', 'class="month_calendar"')
+        return html_cal
 
 @login_required
 def calendar_view(request, year=None, month=None, username=None):
@@ -65,7 +94,7 @@ def calendar_view(request, year=None, month=None, username=None):
     if username:
         target_user = get_object_or_404(User, username=username)
         if not request.user.has_perm('webpage.view_event') and request.user != target_user:
-            return redirect('index') # Or a permission denied page
+            return redirect('index')
 
     if year is None or month is None:
         today = date.today()
@@ -73,7 +102,7 @@ def calendar_view(request, year=None, month=None, username=None):
     else:
         year, month = int(year), int(month)
 
-    cal = DayClickableHTMLCalendar(year, month, username).formatmonth(year, month)
+    cal = DayClickableHTMLCalendar(year, month, username, target_user).formatmonth(year, month)
 
     prev_month = month - 1
     prev_year = year
@@ -103,7 +132,7 @@ def day_view(request, year, month, day, username=None):
     if username:
         target_user = get_object_or_404(User, username=username)
         if not request.user.has_perm('webpage.view_event') and request.user != target_user:
-            return redirect('index') # Or a permission denied page
+            return redirect('index')
 
     day_date = date(year, month, day)
     day_obj, created = Day.objects.get_or_create(date=day_date)
@@ -111,7 +140,11 @@ def day_view(request, year, month, day, username=None):
 
     hours = []
     for hour in range(24):
-        hour_events = events.filter(start_time__hour=hour)
+        current_time_start = time(hour, 0)
+        hour_events = events.filter(
+            start_time__lt=time(hour + 1, 0) if hour < 23 else time(23, 59, 59),
+            end_time__gt=current_time_start
+        )
         hours.append({
             'time': hour,
             'events': hour_events
