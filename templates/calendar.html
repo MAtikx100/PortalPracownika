@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Calendar</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'index' %}">Home</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'calendar' %}">My Calendar</a>
+            {% if perms.webpage.view_event %}
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            {% endif %}
+            <span>Hi, {{ user.username }}!</span>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+        {% endif %}
+    </nav>
+    <h1>Interactive Calendar for {{ target_user.username }}</h1>
+
+    <div class="navigation">
+        {% if username %}
+            <a href="{% url 'calendar_nav_user' username prev_year prev_month %}">Previous Month</a>
+            <a href="{% url 'calendar_nav_user' username next_year next_month %}">Next Month</a>
+        {% else %}
+            <a href="{% url 'calendar_nav' prev_year prev_month %}">Previous Month</a>
+            <a href="{% url 'calendar_nav' next_year next_month %}">Next Month</a>
+        {% endif %}
+    </div>
+
+    {{ calendar|safe }}
+</body>
+</html>

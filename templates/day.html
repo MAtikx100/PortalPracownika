@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Day {{ day.date }}</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'index' %}">Home</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'calendar' %}">My Calendar</a>
+            {% if perms.webpage.view_event %}
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            {% endif %}
+            <span>Hi, {{ user.username }}!</span>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+        {% endif %}
+    </nav>
+    <h1>Events for {{ target_user.username }} on {{ day.date }}</h1>
+    
+    {% if user == target_user %}
+    <a href="{% url 'add_event' year month day.date.day %}">Add Event</a>
+    <br>
+    {% endif %}
+
+    {% if username %}
+        <a href="{% url 'calendar_nav_user' username year month %}">Back to Calendar</a>
+    {% else %}
+        <a href="{% url 'calendar_nav' year month %}">Back to Calendar</a>
+    {% endif %}
+
+    <ul>
+    {% for hour in hours %}
+        <li>
+            <strong>{{ hour.time }}:00</strong>
+            {% for event in hour.events %}
+                <div>
+                    <p>{{ event.title }} ({{ event.start_time|time:"H:i" }} - {{ event.end_time|time:"H:i" }})</p>
+                    <p>{{ event.description }}</p>
+                </div>
+            {% empty %}
+                <p>No events scheduled.</p>
+            {% endfor %}
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
