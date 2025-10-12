@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Work Timer</title>
+</head>
+<body>
+    <h1>Work Timer</h1>
+    <p>Time Elapsed: <span id="timer">00:00:00</span></p>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Stop</button>
+
+    <script>
+        let startTime;
+        let updatedTime;
+        let difference;
+        let tInterval;
+        let running = false;
+
+        function startTimer() {
+            if (!running) {
+                startTime = new Date().getTime();
+                tInterval = setInterval(getShowTime, 1);
+                running = true;
+            }
+        }
+
+        function stopTimer() {
+            if (running) {
+                clearInterval(tInterval);
+                running = false;
+            }
+        }
+
+        function getShowTime() {
+            updatedTime = new Date().getTime();
+            difference = updatedTime - startTime;
+
+            let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            hours = (hours < 10) ? "0" + hours : hours;
+            minutes = (minutes < 10) ? "0" + minutes : minutes;
+            seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+            document.getElementById('timer').innerHTML = hours + ':' + minutes + ':' + seconds;
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startTimer);
+        document.getElementById('stopBtn').addEventListener('click', stopTimer);
+    </script>
+</body>
+</html>
