@@ -178,7 +178,22 @@ def add_event_view(request, year, month, day):
     return render(request, 'add_event.html', {'form': form, 'day': day_obj})
 
 @login_required
+def delete_event_view(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    if request.user == event.user:
+        day_date = event.day.date
+        event.delete()
+        return redirect('day_view', year=day_date.year, month=day_date.month, day=day_date.day)
+    else:
+        # Optionally, add a message for unauthorized attempts
+        return redirect('index')
+
+@login_required
 @permission_required('webpage.view_event', raise_exception=True)
 def dashboard_view(request):
     employees = User.objects.all().order_by('username')
     return render(request, 'dashboard.html', {'employees': employees})
+
+@login_required
+def profile_view(request):
+    return render(request, 'profile.html', {'user': request.user})

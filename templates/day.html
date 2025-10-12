@@ -42,6 +42,9 @@
                     {% if event.title %}<p>{{ event.title }}</p>{% endif %}
                     <p>({{ event.start_time|time:"H:i" }} - {{ event.end_time|time:"H:i" }})</p>
                     {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+                    {% if user == target_user %}
+                        <a href="{% url 'delete_event' event.id %}">Delete</a>
+                    {% endif %}
                 </div>
             {% empty %}
                 <p>No events scheduled.</p>
