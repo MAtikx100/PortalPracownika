@@ -11,25 +11,28 @@
             <a href="{% url 'logout' %}">Logout</a>
             <a href="{% url 'calendar' %}">My Calendar</a>
             {% if perms.webpage.view_event %}
-            <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+            {% endif %}
+            {% if perms.auth.add_user %}
+                <a href="{% url 'create_user' %}">Create User</a>
             {% endif %}
             <span>Hi, {{ user.username }}!</span>
         {% else %}
             <a href="{% url 'login' %}">Login</a>
-            <a href="{% url 'register' %}">Register</a>
         {% endif %}
     </nav>
     <h1>Welcome to the Employee Work Time Dashboard</h1>
     
     {% if user.is_authenticated %}
         <p>Welcome back, {{ user.username }}! Use the navigation links to view your calendar or log out.</p>
-        <p>You can add events like doctor's appointments or other personal time off to your calendar.</p>
-        {% if perms.webpage.view_event %}
-            <p>As a manager, you can also access the <a href="{% url 'dashboard' %}">Manager Dashboard</a> to view the calendars of all employees.</p>
+        {% if user.groups.all.0.name == 'Manager' %}
+            <p>As a manager, you can access the <a href="{% url 'dashboard' %}">Dashboard</a> to view your employees and create new user accounts for them.</p>
+        {% elif user.groups.all.0.name == 'Administrator' or user.is_superuser %}
+            <p>As an administrator, you can access the <a href="{% url 'dashboard' %}">Dashboard</a> to view all managers and create new manager accounts.</p>
         {% endif %}
     {% else %}
         <p>This application helps you manage your work schedule and appointments.</p>
-        <p>Please <a href="{% url 'login' %}">log in</a> or <a href="{% url 'register' %}">register</a> to access your personal calendar.</p>
+        <p>Please <a href="{% url 'login' %}">log in</a> to access your personal calendar. New user accounts can only be created by an authorized manager or administrator.</p>
     {% endif %}
 
 </body>

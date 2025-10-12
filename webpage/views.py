@@ -1,27 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from calendar import HTMLCalendar
 from datetime import date, time
-from .models import Day, Event
-from .forms import EventForm
+from .models import Day, Event, Profile
+from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm
 from django.urls import reverse
 
 def index(request):
     return render(request, 'index.html')
-
-def register_view(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('index')
-    else:
-        form = UserCreationForm()
-    return render(request, 'register.html', {'form': form})
 
 def login_view(request):
     if request.method == 'POST':
@@ -37,6 +26,42 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('index')
+
+@login_required
+@permission_required('auth.add_user', raise_exception=True)
+def create_user_view(request):
+    user = request.user
+    if user.groups.filter(name='Administrator').exists() or user.is_superuser:
+        Form = ManagerCreationForm
+        template_title = 'Create New Manager'
+        submit_text = 'Create Manager'
+        group_name = 'Manager'
+    elif user.groups.filter(name='Manager').exists():
+        Form = EmployeeCreationForm
+        template_title = 'Create New Employee'
+        submit_text = 'Create Employee'
+        group_name = 'Regular User'
+    else:
+        return redirect('index') # Or a permission denied page
+
+    if request.method == 'POST':
+        form = Form(request.POST)
+        if form.is_valid():
+            new_user = form.save()
+            group = Group.objects.get(name=group_name)
+            new_user.groups.add(group)
+            if group_name == 'Regular User':
+                new_user.profile.manager = user
+                new_user.profile.save()
+            return redirect('dashboard')
+    else:
+        form = Form()
+
+    return render(request, 'user_form.html', {
+        'form': form,
+        'title': template_title,
+        'submit_button_text': submit_text
+    })
 
 class DayClickableHTMLCalendar(HTMLCalendar):
     def __init__(self, year=None, month=None, user_username=None, target_user=None):
@@ -93,7 +118,10 @@ def calendar_view(request, year=None, month=None, username=None):
     target_user = request.user
     if username:
         target_user = get_object_or_404(User, username=username)
-        if not request.user.has_perm('webpage.view_event') and request.user != target_user:
+        # Manager can view their employees, Admin can view anyone
+        is_manager_of_user = target_user.profile.manager == request.user
+        is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
+        if not (is_manager_of_user or is_admin or target_user == request.user):
             return redirect('index')
 
     if year is None or month is None:
@@ -131,7 +159,9 @@ def day_view(request, year, month, day, username=None):
     target_user = request.user
     if username:
         target_user = get_object_or_404(User, username=username)
-        if not request.user.has_perm('webpage.view_event') and request.user != target_user:
+        is_manager_of_user = target_user.profile.manager == request.user
+        is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
+        if not (is_manager_of_user or is_admin or target_user == request.user):
             return redirect('index')
 
     day_date = date(year, month, day)
@@ -178,7 +208,21 @@ def add_event_view(request, year, month, day):
     return render(request, 'add_event.html', {'form': form, 'day': day_obj})
 
 @login_required
-@permission_required('webpage.view_event', raise_exception=True)
 def dashboard_view(request):
-    employees = User.objects.all().order_by('username')
-    return render(request, 'dashboard.html', {'employees': employees})
+    user = request.user
+    if user.groups.filter(name='Administrator').exists() or user.is_superuser:
+        # Administrators see all Managers
+        users_to_display = User.objects.filter(groups__name='Manager')
+        dashboard_title = "All Managers"
+    elif user.groups.filter(name='Manager').exists():
+        # Managers see their own employees
+        users_to_display = User.objects.filter(profile__manager=user)
+        dashboard_title = "My Employees"
+    else:
+        users_to_display = []
+        dashboard_title = "Dashboard"
+
+    return render(request, 'dashboard.html', {
+        'users_to_display': users_to_display,
+        'dashboard_title': dashboard_title
+    })

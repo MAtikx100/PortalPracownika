@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
 from .models import Event
 import datetime
 
@@ -17,3 +18,11 @@ class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = ['event_type', 'title', 'description', 'start_time', 'end_time']
+
+class ManagerCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        fields = ['username', 'first_name', 'last_name']
+
+class EmployeeCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        fields = ['username', 'first_name', 'last_name']

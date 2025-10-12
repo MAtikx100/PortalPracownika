@@ -46,12 +46,14 @@
             <a href="{% url 'logout' %}">Logout</a>
             <a href="{% url 'calendar' %}">My Calendar</a>
             {% if perms.webpage.view_event %}
-            <a href="{% url 'dashboard' %}">Dashboard</a>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
+            {% endif %}
+            {% if perms.auth.add_user %}
+                <a href="{% url 'create_user' %}">Create User</a>
             {% endif %}
             <span>Hi, {{ user.username }}!</span>
         {% else %}
             <a href="{% url 'login' %}">Login</a>
-            <a href="{% url 'register' %}">Register</a>
         {% endif %}
     </nav>
     <h1>Interactive Calendar for {{ target_user.username }}</h1>
