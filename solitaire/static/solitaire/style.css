@@ -1,0 +1,22 @@
+.card {
+    width: 80px;
+    height: 120px;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin: 5px;
+    float: left;
+    padding: 5px;
+}
+
+.card.face-down {
+    background-color: blue;
+}
+
+.tableau-pile, .foundation-pile, .stock-pile, .talon-pile {
+    min-height: 130px;
+    min-width: 90px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    float: left;
+    margin: 10px;
+}

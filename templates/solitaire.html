@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solitaire</title>
+    <link rel="stylesheet" href="{% static 'solitaire/style.css' %}">
+    <script src="{% static 'solitaire/solitaire.js' %}" defer></script>
+</head>
+<body>
+    <h1>Solitaire</h1>
+
+    <form method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit" name="action" value="new_game">New Game</button>
+    </form>
+
+    <form id="move-card-form" method="post" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="move_card">
+        <input type="hidden" name="card_info" value="">
+        <input type="hidden" name="to_pile" value="">
+    </form>
+
+    <div class="game-board">
+        <div class="top-piles">
+            <div class="stock-talon">
+                <div class="stock-pile">
+                    <h3>Stock</h3>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" name="action" value="draw_card" class="card-button">
+                            {% if game.stock %}
+                                <div class="card face-down"></div>
+                            {% else %}
+                                <div class="card empty-pile"></div>
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+                <div class="talon-pile">
+                    <h3>Talon</h3>
+                    {% if game.talon %}
+                        <div class="card" draggable="true" data-card-info="talon.{{ forloop.last }}">{{ game.talon|last }}</div>
+                    {% else %}
+                        <div class="card empty-pile"></div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="foundations">
+                <h2>Foundations</h2>
+                {% for pile in game.foundations %}
+                    <div class="foundation-pile" data-pile-info="foundation.{{ forloop.counter0 }}">
+                        {% if pile %}
+                            <div class="card">{{ pile|last }}</div>
+                        {% else %}
+                            <div class="card empty-pile"></div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="clear: both;"></div>
+
+        <h2>Tableau</h2>
+        <div class="tableau">
+            {% for pile in game.tableau %}
+                <div class="tableau-pile" data-pile-info="tableau.{{ forloop.counter0 }}">
+                    {% for card in pile %}
+                        <div class="card {% if not card.is_face_up %}face-down{% else %}" draggable="true" data-card-info="tableau.{{ forloop.parentloop.counter0 }}.{{ forloop.counter0 }}"{% endif %}>
+                            {% if card.is_face_up %}
+                                {{ card }}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>
