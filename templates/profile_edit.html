@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profile</title>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <h1>Edit Your Profile</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save Changes</button>
+    </form>
+    <br>
+    <a href="{% url 'profile' %}">Cancel</a>
+
+</body>
+</html>

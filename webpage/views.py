@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 from calendar import HTMLCalendar
 from datetime import date, time
 from .models import Day, Event, Profile
-from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm
+from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm, ProfileEditForm
 from django.urls import reverse
 
 def index(request):
@@ -271,3 +271,18 @@ def dashboard_view(request):
 @login_required
 def timer_view(request):
     return render(request, 'timer.html')
+
+@login_required
+def profile_view(request):
+    return render(request, 'profile.html', {'user': request.user})
+
+@login_required
+def profile_edit_view(request):
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    else:
+        form = ProfileEditForm(instance=request.user)
+    return render(request, 'profile_edit.html', {'form': form})

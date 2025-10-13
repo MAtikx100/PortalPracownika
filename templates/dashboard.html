@@ -5,29 +5,34 @@
     <title>Dashboard</title>
 </head>
 <body>
-    <nav>
-        <a href="{% url 'index' %}">Home</a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}">Logout</a>
-            <a href="{% url 'calendar' %}">My Calendar</a>
-            {% if user.is_superuser or user.groups.all.0.name == 'Administrator' or user.groups.all.0.name == 'Manager' %}
-                <a href="{% url 'dashboard' %}">Dashboard</a>
-            {% endif %}
-            {% if user.is_superuser or user.groups.all.0.name == 'Administrator' or user.groups.all.0.name == 'Manager' %}
-                <a href="{% url 'create_user' %}">Create User</a>
-            {% endif %}
-            <span>Hi, {{ user.username }}!</span>
-        {% else %}
-            <a href="{% url 'login' %}">Login</a>
-        {% endif %}
-    </nav>
+    {% include '_navbar.html' %}
+
     <h1>{{ dashboard_title }}</h1>
-    <ul>
-        {% for user_to_display in users_to_display %}
-            <li><a href="{% url 'calendar_user' user_to_display.username %}">{{ user_to_display.username }}</a></li>
-        {% empty %}
-            <li>No users to display.</li>
-        {% endfor %}
-    </ul>
+
+    {% if employees %}
+        <h2>{% if user.groups.all.0.name == 'Manager' %}My Employees{% else %}Managers{% endif %}</h2>
+        <ul>
+            {% for employee in employees %}
+                <li><a href="{% url 'calendar_user' employee.username %}">{{ employee.username }}</a></li>
+            {% empty %}
+                <li>No users to display.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if other_managers %}
+        <h2>Other Managers</h2>
+        <ul>
+            {% for manager in other_managers %}
+                <li>
+                    {{ manager.username }}
+                    - <a href="{% url 'calendar_user' manager.username %}">View Calendar</a>
+                </li>
+            {% empty %}
+                <li>There are no other managers.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
 </body>
 </html>

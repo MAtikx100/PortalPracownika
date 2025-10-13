@@ -8,6 +8,8 @@ urlpatterns = [
     path('create_user/', views.create_user_view, name='create_user'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('timer/', views.timer_view, name='timer'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.profile_edit_view, name='profile_edit'),
 
     # Calendar URLs for the logged-in user
     path('calendar/', views.calendar_view, name='calendar'),
