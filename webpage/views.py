@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
 from calendar import HTMLCalendar
@@ -118,10 +118,12 @@ def calendar_view(request, year=None, month=None, username=None):
     target_user = request.user
     if username:
         target_user = get_object_or_404(User, username=username)
-        # Manager can view their employees, Admin can view anyone
+        # Security checks
         is_manager_of_user = target_user.profile.manager == request.user
         is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
-        if not (is_manager_of_user or is_admin or target_user == request.user):
+        is_viewing_another_manager = request.user.groups.filter(name='Manager').exists() and target_user.groups.filter(name='Manager').exists()
+
+        if not (is_manager_of_user or is_admin or target_user == request.user or is_viewing_another_manager):
             return redirect('index')
 
     if year is None or month is None:
@@ -159,9 +161,12 @@ def day_view(request, year, month, day, username=None):
     target_user = request.user
     if username:
         target_user = get_object_or_404(User, username=username)
+        # Security checks
         is_manager_of_user = target_user.profile.manager == request.user
         is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
-        if not (is_manager_of_user or is_admin or target_user == request.user):
+        is_viewing_another_manager = request.user.groups.filter(name='Manager').exists() and target_user.groups.filter(name='Manager').exists()
+
+        if not (is_manager_of_user or is_admin or target_user == request.user or is_viewing_another_manager):
             return redirect('index')
 
     day_date = date(year, month, day)
@@ -190,7 +195,16 @@ def day_view(request, year, month, day, username=None):
     })
 
 @login_required
-def add_event_view(request, year, month, day):
+def add_event_view(request, year, month, day, username=None):
+    target_user = request.user
+    if username:
+        target_user = get_object_or_404(User, username=username)
+        # Security check: only a manager of the user or an admin can add an event
+        is_manager_of_user = target_user.profile.manager == request.user
+        is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
+        if not (is_manager_of_user or is_admin):
+            return redirect('index')
+
     day_date = date(year, month, day)
     day_obj, created = Day.objects.get_or_create(date=day_date)
 
@@ -199,47 +213,60 @@ def add_event_view(request, year, month, day):
         if form.is_valid():
             event = form.save(commit=False)
             event.day = day_obj
-            event.user = request.user
+            event.user = target_user # Assign event to the correct user
             event.save()
-            return redirect('day_view', year=year, month=month, day=day)
+            if username:
+                return redirect('day_view_user', username=username, year=year, month=month, day=day)
+            else:
+                return redirect('day_view', year=year, month=month, day=day)
     else:
         form = EventForm()
 
-    return render(request, 'add_event.html', {'form': form, 'day': day_obj})
+    return render(request, 'add_event.html', {
+        'form': form, 
+        'day': day_obj,
+        'target_user': target_user
+    })
+
 @login_required
 def delete_event_view(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    if request.user == event.user:
-        day_date = event.day.date
-        event.delete()
-        return redirect('day_view', year=day_date.year, month=day_date.month, day=day_date.day)
-    else:
-        # Optionally, add a message for unauthorized attempts
-        return redirect('index')
+    event_owner = event.user
+    day_date = event.day.date
 
-@login_required
-def profile_view(request):
-    return render(request, 'profile.html', {'user': request.user})
+    # Security check
+    is_manager_of_owner = event_owner.profile.manager == request.user
+    is_admin = request.user.groups.filter(name='Administrator').exists() or request.user.is_superuser
+
+    if not (request.user == event_owner or is_manager_of_owner or is_admin):
+        return redirect('index') # Or a permission denied page
+
+    event.delete()
+
+    # Redirect back to the correct day view
+    if event_owner != request.user:
+        return redirect('day_view_user', username=event_owner.username, year=day_date.year, month=day_date.month, day=day_date.day)
+    else:
+        return redirect('day_view', year=day_date.year, month=day_date.month, day=day_date.day)
 
 @login_required
 def dashboard_view(request):
     user = request.user
-    if user.groups.filter(name='Administrator').exists() or user.is_superuser:
-        # Administrators see all Managers
-        users_to_display = User.objects.filter(groups__name='Manager')
-        dashboard_title = "All Managers"
-    elif user.groups.filter(name='Manager').exists():
-        # Managers see their own employees
-        users_to_display = User.objects.filter(profile__manager=user)
-        dashboard_title = "My Employees"
-    else:
-        users_to_display = []
-        dashboard_title = "Dashboard"
+    context = {
+        'dashboard_title': 'Dashboard',
+        'employees': None,
+        'other_managers': None
+    }
 
-    return render(request, 'dashboard.html', {
-        'users_to_display': users_to_display,
-        'dashboard_title': dashboard_title
-    })
+    if user.groups.filter(name='Administrator').exists() or user.is_superuser:
+        context['dashboard_title'] = "All Managers"
+        context['employees'] = User.objects.filter(groups__name='Manager')
+    elif user.groups.filter(name='Manager').exists():
+        context['dashboard_title'] = "My Team Dashboard"
+        context['employees'] = User.objects.filter(profile__manager=user)
+        context['other_managers'] = User.objects.filter(groups__name='Manager').exclude(id=user.id)
+    
+    return render(request, 'dashboard.html', context)
 
 @login_required
 def timer_view(request):

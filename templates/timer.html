@@ -3,52 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <title>Work Timer</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; }
+        #display { font-size: 3em; margin: 20px; }
+        button { font-size: 1em; padding: 10px 20px; margin: 5px; }
+    </style>
 </head>
 <body>
-    <h1>Work Timer</h1>
-    <p>Time Elapsed: <span id="timer">00:00:00</span></p>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Stop</button>
+    <h2>Work Timer</h2>
+    <div id="display">00:00:00</div>
+    <button id="startStopBtn">Start</button>
+    <button id="resetBtn">Reset</button>
 
     <script>
-        let startTime;
-        let updatedTime;
-        let difference;
-        let tInterval;
-        let running = false;
+        let timer;
+        let isRunning = false;
+        let seconds = 0;
 
-        function startTimer() {
-            if (!running) {
-                startTime = new Date().getTime();
-                tInterval = setInterval(getShowTime, 1);
-                running = true;
+        const display = document.getElementById('display');
+        const startStopBtn = document.getElementById('startStopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function formatTime(sec) {
+            const hours = Math.floor(sec / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (sec % 60).toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateDisplay() {
+            display.textContent = formatTime(seconds);
+        }
+
+        function startStop() {
+            if (isRunning) {
+                clearInterval(timer);
+                startStopBtn.textContent = 'Start';
+            } else {
+                timer = setInterval(() => {
+                    seconds++;
+                    updateDisplay();
+                }, 1000);
+                startStopBtn.textContent = 'Stop';
             }
+            isRunning = !isRunning;
         }
 
-        function stopTimer() {
-            if (running) {
-                clearInterval(tInterval);
-                running = false;
-            }
+        function reset() {
+            clearInterval(timer);
+            isRunning = false;
+            seconds = 0;
+            updateDisplay();
+            startStopBtn.textContent = 'Start';
         }
 
-        function getShowTime() {
-            updatedTime = new Date().getTime();
-            difference = updatedTime - startTime;
-
-            let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-            hours = (hours < 10) ? "0" + hours : hours;
-            minutes = (minutes < 10) ? "0" + minutes : minutes;
-            seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-            document.getElementById('timer').innerHTML = hours + ':' + minutes + ':' + seconds;
-        }
-
-        document.getElementById('startBtn').addEventListener('click', startTimer);
-        document.getElementById('stopBtn').addEventListener('click', stopTimer);
+        startStopBtn.addEventListener('click', startStop);
+        resetBtn.addEventListener('click', reset);
     </script>
 </body>
 </html>
