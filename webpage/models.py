@@ -46,3 +46,10 @@ def save_user_profile(sender, instance, **kwargs):
     else:
         # If the profile doesn't exist, create it. This is a fallback.
         Profile.objects.create(user=instance)
+
+class Timer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    time = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.time}'

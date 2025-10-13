@@ -3,6 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ user.username }}'s Profile</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #fff;
+            margin-bottom: 5px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
     {% include '_navbar.html' %}
@@ -14,6 +39,22 @@
     <p><strong>Last Name:</strong> {{ user.last_name|default:"Not set" }}</p>
     <br>
     <a href="{% url 'profile_edit' %}">Edit Profile</a>
+
+    <hr>
+
+    <div class="container">
+        <h2>Saved Times</h2>
+        {% if saved_times %}
+            <ul>
+                {% for time in saved_times %}
+                    <li>{{ time.time }}</li>
+                {% endfor %}
+            </ul>
+            <p><strong>Total Time:</strong> {{ total_time }}</p>
+        {% else %}
+            <p>No saved times yet.</p>
+        {% endif %}
+    </div>
 
 </body>
 </html>

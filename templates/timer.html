@@ -14,6 +14,8 @@
     <div id="display">00:00:00</div>
     <button id="startStopBtn">Start</button>
     <button id="resetBtn">Reset</button>
+    <button id="saveBtn">Save</button>
+    <ul id="savedTimes"></ul>
 
     <script>
         let timer;
@@ -23,12 +25,29 @@
         const display = document.getElementById('display');
         const startStopBtn = document.getElementById('startStopBtn');
         const resetBtn = document.getElementById('resetBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const savedTimes = document.getElementById('savedTimes');
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
         function formatTime(sec) {
             const hours = Math.floor(sec / 3600).toString().padStart(2, '0');
             const minutes = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
-            const seconds = (sec % 60).toString().padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
+            const secondsValue = (sec % 60).toString().padStart(2, '0');
+            return `${hours}:${minutes}:${secondsValue}`;
         }
 
         function updateDisplay() {
@@ -57,8 +76,44 @@
             startStopBtn.textContent = 'Start';
         }
 
+        function saveTime() {
+            const time = formatTime(seconds);
+            fetch('/save_time/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ time: time }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    const timeItem = document.createElement('li');
+                    timeItem.textContent = time;
+                    savedTimes.appendChild(timeItem);
+                }
+            });
+        }
+
+        function loadSavedTimes() {
+            fetch('/get_times/')
+            .then(response => response.json())
+            .then(data => {
+                savedTimes.innerHTML = '';
+                data.forEach(time => {
+                    const timeItem = document.createElement('li');
+                    timeItem.textContent = time;
+                    savedTimes.appendChild(timeItem);
+                });
+            });
+        }
+
         startStopBtn.addEventListener('click', startStop);
         resetBtn.addEventListener('click', reset);
+        saveBtn.addEventListener('click', saveTime);
+
+        window.onload = loadSavedTimes;
     </script>
 </body>
 </html>

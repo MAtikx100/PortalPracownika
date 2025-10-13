@@ -5,9 +5,11 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
 from calendar import HTMLCalendar
 from datetime import date, time
-from .models import Day, Event, Profile
+from .models import Day, Event, Profile, Timer
 from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm, ProfileEditForm
 from django.urls import reverse
+from django.http import JsonResponse
+import json
 
 def index(request):
     return render(request, 'index.html')
@@ -273,8 +275,43 @@ def timer_view(request):
     return render(request, 'timer.html')
 
 @login_required
+def save_time(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        time = data.get('time')
+        if time:
+            Timer.objects.create(user=request.user, time=time)
+            return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'error'})
+
+@login_required
+def get_times(request):
+    times = Timer.objects.filter(user=request.user).values_list('time', flat=True)
+    return JsonResponse(list(times), safe=False)
+
+@login_required
 def profile_view(request):
-    return render(request, 'profile.html', {'user': request.user})
+    user = request.user
+    saved_times = Timer.objects.filter(user=user).order_by('-id')
+
+    total_seconds = 0
+    for timer_instance in saved_times:
+        try:
+            h, m, s = map(int, timer_instance.time.split(':'))
+            total_seconds += h * 3600 + m * 60 + s
+        except ValueError:
+            continue
+
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    total_time_str = f'{int(hours):02}:{int(minutes):02}:{int(seconds):02}'
+
+    context = {
+        'user': request.user,
+        'saved_times': saved_times,
+        'total_time': total_time_str,
+    }
+    return render(request, 'profile.html', context)
 
 @login_required
 def profile_edit_view(request):
