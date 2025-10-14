@@ -4,6 +4,7 @@
         <a href="{% url 'logout' %}">Logout</a>
         <a href="{% url 'profile' %}">My Profile</a>
         <a href="{% url 'calendar' %}">My Calendar</a>
+        <a href="{% url 'notice_board' %}">Notice Board</a>
         {% if perms.webpage.view_event %}
             <a href="{% url 'dashboard' %}">Dashboard</a>
         {% endif %}

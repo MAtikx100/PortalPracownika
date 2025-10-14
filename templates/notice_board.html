@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notice Board</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        .notice {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .notice h2 {
+            margin-top: 0;
+        }
+        .notice-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <h1>Notice Board</h1>
+
+    {% if is_manager %}
+        <a href="{% url 'add_notice' %}">Add New Announcement</a>
+        <hr>
+    {% endif %}
+
+    {% for notice in notices %}
+        <div class="notice">
+            <h2>{{ notice.title }}</h2>
+            <p class="notice-meta">Posted by {{ notice.author.username }} on {{ notice.created_at|date:"Y-m-d H:i" }}</p>
+            <p>{{ notice.content|linebreaksbr }}</p>
+        </div>
+    {% empty %}
+        <p>No announcements yet.</p>
+    {% endfor %}
+
+</body>
+</html>

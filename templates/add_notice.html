@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Announcement</title>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <h1>Add New Announcement</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Post Announcement</button>
+    </form>
+
+</body>
+</html>

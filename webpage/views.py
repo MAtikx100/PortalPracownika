@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
 from calendar import HTMLCalendar
 from datetime import date, time
-from .models import Day, Event, Profile, Timer
-from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm, ProfileEditForm
+from .models import Day, Event, Profile, Timer, Notice
+from .forms import EventForm, ManagerCreationForm, EmployeeCreationForm, ProfileEditForm, NoticeForm
 from django.urls import reverse
 from django.http import JsonResponse
 import json
@@ -256,18 +256,29 @@ def dashboard_view(request):
     user = request.user
     context = {
         'dashboard_title': 'Dashboard',
-        'employees': None,
-        'other_managers': None
     }
 
-    if user.groups.filter(name='Administrator').exists() or user.is_superuser:
-        context['dashboard_title'] = "All Managers"
-        context['employees'] = User.objects.filter(groups__name='Manager')
-    elif user.groups.filter(name='Manager').exists():
-        context['dashboard_title'] = "My Team Dashboard"
-        context['employees'] = User.objects.filter(profile__manager=user)
-        context['other_managers'] = User.objects.filter(groups__name='Manager').exclude(id=user.id)
-    
+    is_admin = user.groups.filter(name='Administrator').exists() or user.is_superuser
+    is_manager = user.groups.filter(name='Manager').exists()
+
+    if is_admin or is_manager:
+        if is_admin:
+            context['dashboard_title'] = "All Users Dashboard"
+        else:
+            context['dashboard_title'] = "Company Dashboard"
+
+        managers = User.objects.filter(groups__name='Manager')
+        managers_with_teams = []
+        for manager in managers:
+            employees = User.objects.filter(profile__manager=manager)
+            managers_with_teams.append({
+                'manager': manager,
+                'employees': employees
+            })
+        
+        context['managers_with_teams'] = managers_with_teams
+        context['unassigned_employees'] = User.objects.filter(groups__name='Regular User', profile__manager__isnull=True)
+
     return render(request, 'dashboard.html', context)
 
 @login_required
@@ -323,3 +334,30 @@ def profile_edit_view(request):
     else:
         form = ProfileEditForm(instance=request.user)
     return render(request, 'profile_edit.html', {'form': form})
+
+@login_required
+def notice_board_view(request):
+    notices = Notice.objects.order_by('-created_at')
+    is_manager = request.user.groups.filter(name='Manager').exists()
+    context = {
+        'notices': notices,
+        'is_manager': is_manager,
+    }
+    return render(request, 'notice_board.html', context)
+
+@login_required
+def add_notice_view(request):
+    if not request.user.groups.filter(name='Manager').exists():
+        return redirect('notice_board')
+
+    if request.method == 'POST':
+        form = NoticeForm(request.POST)
+        if form.is_valid():
+            notice = form.save(commit=False)
+            notice.author = request.user
+            notice.save()
+            return redirect('notice_board')
+    else:
+        form = NoticeForm()
+
+    return render(request, 'add_notice.html', {'form': form})

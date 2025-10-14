@@ -12,6 +12,8 @@ urlpatterns = [
     path('get_times/', views.get_times, name='get_times'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.profile_edit_view, name='profile_edit'),
+    path('notice_board/', views.notice_board_view, name='notice_board'),
+    path('notice_board/add/', views.add_notice_view, name='add_notice'),
 
     # Calendar URLs for the logged-in user
     path('calendar/', views.calendar_view, name='calendar'),

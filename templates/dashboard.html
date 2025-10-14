@@ -3,36 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
+    <style>
+        .manager-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .manager-item {
+            margin-bottom: 10px;
+        }
+        .employee-list {
+            list-style-type: none;
+            padding-left: 20px;
+            display: none; /* Hidden by default */
+        }
+        .manager-name {
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     {% include '_navbar.html' %}
 
     <h1>{{ dashboard_title }}</h1>
 
-    {% if employees %}
-        <h2>{% if user.groups.all.0.name == 'Manager' %}My Employees{% else %}Managers{% endif %}</h2>
-        <ul>
-            {% for employee in employees %}
-                <li><a href="{% url 'calendar_user' employee.username %}">{{ employee.username }}</a></li>
-            {% empty %}
-                <li>No users to display.</li>
+    {% if managers_with_teams %}
+        <h2>Managers and Their Teams</h2>
+        <ul class="manager-list">
+            {% for item in managers_with_teams %}
+                <li class="manager-item">
+                    <span class="manager-name" onclick="toggleEmployees(this)">{{ item.manager.username }}</span>
+                    <a href="{% url 'calendar_user' item.manager.username %}">(View Calendar)</a>
+                    <ul class="employee-list">
+                        {% for employee in item.employees %}
+                            <li>
+                                {{ employee.username }}
+                                <a href="{% url 'calendar_user' employee.username %}">(View Calendar)</a>
+                            </li>
+                        {% empty %}
+                            <li>No employees in this team.</li>
+                        {% endfor %}
+                    </ul>
+                </li>
             {% endfor %}
         </ul>
     {% endif %}
 
-    {% if other_managers %}
-        <h2>Other Managers</h2>
+    {% if unassigned_employees %}
+        <h2>Unassigned Employees</h2>
         <ul>
-            {% for manager in other_managers %}
+            {% for employee in unassigned_employees %}
                 <li>
-                    {{ manager.username }}
-                    - <a href="{% url 'calendar_user' manager.username %}">View Calendar</a>
+                    {{ employee.username }}
+                    <a href="{% url 'calendar_user' employee.username %}">(View Calendar)</a>
                 </li>
-            {% empty %}
-                <li>There are no other managers.</li>
             {% endfor %}
         </ul>
     {% endif %}
+
+    <script>
+        function toggleEmployees(element) {
+            const employeeList = element.nextElementSibling.nextElementSibling;
+            if (employeeList.style.display === "none" || employeeList.style.display === "") {
+                employeeList.style.display = "block";
+            } else {
+                employeeList.style.display = "none";
+            }
+        }
+    </script>
 
 </body>
 </html>
