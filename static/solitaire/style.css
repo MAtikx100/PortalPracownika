@@ -1,0 +1,78 @@
+h1 {
+    text-align: center;
+}
+
+#game-board {
+    max-width: 1000px;
+    margin: auto;
+    font-family: sans-serif;
+}
+
+.top-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.stock-talon-container, .foundations-container, .tableau-container {
+    display: flex;
+}
+
+.pile {
+    width: 90px;
+    height: 130px;
+    border: 2px solid #888;
+    border-radius: 5px;
+    margin: 5px;
+    background-color: rgba(0, 128, 0, 0.2);
+    position: relative; /* Needed for card positioning */
+}
+
+.card {
+    width: 80px;
+    height: 120px;
+    border: 1px solid #333;
+    border-radius: 5px;
+    box-sizing: border-box;
+    background-color: white;
+    font-size: 20px;
+    user-select: none;
+    cursor: pointer;
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 5px;
+}
+
+.card.face-down {
+    background-color: #00008B;
+    color: transparent;
+}
+
+.stock-pile.empty-stock {
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 48px;
+    color: #555;
+}
+
+.tableau-pile .card {
+    /* JS will set the 'top' property for stacking */
+}
+
+.card.dragging {
+    opacity: 0.5;
+}
+
+#new-game-button {
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    display: block;
+}

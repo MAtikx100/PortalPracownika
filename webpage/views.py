@@ -240,3 +240,7 @@ def dashboard_view(request):
         'users_to_display': users_to_display,
         'dashboard_title': dashboard_title
     })
+
+@login_required
+def solitaire_view(request):
+    return render(request, 'solitaire.html')
